@@ -1435,16 +1435,41 @@ def render_grid(df_exibicao):
                 "padding-top": "6px",
                 "padding-bottom": "6px",
             },
+        
+            /* força estrutura do grid */
+            ".ag-root-wrapper": {
+                "overflow": "visible !important",
+            },
+            ".ag-root-wrapper-body": {
+                "overflow": "visible !important",
+            },
+            ".ag-body-viewport": {
+                "overflow-y": "auto !important",
+            },
+            ".ag-center-cols-viewport": {
+                "overflow-x": "auto !important",
+                "overflow-y": "hidden !important",
+            },
+        
+            /* barra horizontal sempre visível */
             ".ag-body-horizontal-scroll": {
                 "display": "block !important",
-                "min-height": "16px !important",
-                "height": "16px !important",
+                "visibility": "visible !important",
+                "opacity": "1 !important",
+                "min-height": "18px !important",
+                "height": "18px !important",
+                "position": "sticky !important",
+                "bottom": "0 !important",
+                "z-index": "20 !important",
+                "background": "#f8fafc !important",
+                "border-top": "1px solid #cbd5e1 !important",
             },
             ".ag-body-horizontal-scroll-viewport": {
                 "overflow-x": "scroll !important",
             },
-            ".ag-center-cols-viewport": {
-                "overflow-x": "hidden !important",
+            ".ag-body-horizontal-scroll-container": {
+                "min-height": "18px !important",
+                "height": "18px !important",
             },
         },
         height=950,
