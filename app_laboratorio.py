@@ -1275,7 +1275,7 @@ def preparar_dataframe_exibicao(df_filtrado):
         df_exibicao["sequencia_atual"], errors="coerce"
     ).fillna(0).astype(int)
 
-    
+    df_exibicao["Remover"] = df_exibicao["Remover"].fillna(False).astype(bool)
 
     colunas_exibicao = [
         "Remover",
@@ -1336,7 +1336,7 @@ def render_grid(df_exibicao):
     st.markdown("### Posição das SDs / OFs do Laboratório")
 
     df_grid = df_exibicao.copy()
-    
+
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
 
@@ -1359,15 +1359,7 @@ def render_grid(df_exibicao):
         suppressHorizontalScroll=False
     )
 
-    gb.configure_column(
-    "Remover",
-    editable=True,
-    cellRenderer="agCheckboxCellRenderer",
-    cellEditor="agCheckboxCellEditor",
-    width=90,
-    minWidth=80,
-    maxWidth=100
-    )
+    gb.configure_column("Remover", editable=True, cellEditor="agCheckboxCellEditor", width=90, minWidth=80, maxWidth=100)
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=100)
     gb.configure_column("Operações Percorridas", width=400, wrapText=True, autoHeight=True)
     gb.configure_column("Responsavel",editable=True,cellEditor="agTextCellEditor",width=220)
