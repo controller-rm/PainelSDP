@@ -1230,14 +1230,16 @@ def preparar_dataframe_exibicao(df_filtrado):
 
     hoje = pd.Timestamp.today().normalize()
 
-    prev_dt = pd.to_datetime(df_filtrado["data_prev_entrega"], errors="coerce").dt.normalize()
+    prev_dt = pd.to_datetime(df_filtrado["data_prev_entrega"], errors="coerce")
+    prev_dt = prev_dt.dt.normalize()
 
     nw_dt = pd.to_datetime(
         df_filtrado["Nw_Data"].astype(str).str.strip(),
         format="%d/%m/%Y",
         dayfirst=True,
         errors="coerce"
-    ).dt.normalize()
+    )
+    nw_dt = nw_dt.dt.normalize()
 
     data_referencia = nw_dt.where(nw_dt.notna(), prev_dt)
     dias_atraso = (hoje - data_referencia).dt.days
@@ -1258,9 +1260,17 @@ def preparar_dataframe_exibicao(df_filtrado):
         "Nw_Data",
         "Prioridade",
         "Responsavel",
+        "Alteracao",
+        "desc_operacao_atual",
+        "desc_operador_atual",
+        "operacoes_percorridas",
         "codigo_original",
         "GP_codigo_grupo",
         "SGP_codigo_subgrupo",
+        "Auditoria SD",
+        "Cliente SD",
+        "Resultado SD",
+        "Observações SD",
     ]:
         if col in df_exibicao.columns:
             df_exibicao[col] = df_exibicao[col].fillna("").astype(str)
@@ -1269,12 +1279,12 @@ def preparar_dataframe_exibicao(df_filtrado):
         df_exibicao["sequencia_atual"], errors="coerce"
     ).fillna(0).astype(int)
 
-    # Remover vira texto: "" ou "X"
+    # Remover continua como texto para estabilidade no Cloud
     df_exibicao["Remover"] = df_exibicao["Remover"].apply(
         lambda x: "X" if str(x).strip().lower() in ["true", "1", "x"] else ""
     )
 
-    # EXIBIÇÃO MAIS ENXUTA
+    # VOLTAMOS COM TODAS AS COLUNAS
     colunas_exibicao = [
         "Remover",
         "Prioridade",
@@ -1290,6 +1300,9 @@ def preparar_dataframe_exibicao(df_filtrado):
         "codigo_produto",
         "desc_cliente",
         "Auditoria SD",
+        "Cliente SD",
+        "Resultado SD",
+        "Observações SD",
         "codigo_original",
         "GP_codigo_grupo",
         "SGP_codigo_subgrupo",
@@ -1297,6 +1310,8 @@ def preparar_dataframe_exibicao(df_filtrado):
         "data_final_apontamento",
         "desc_operacao_atual",
         "desc_operador_atual",
+        "operacoes_percorridas",
+        "Alteracao",
     ]
 
     colunas_exibicao = [c for c in colunas_exibicao if c in df_exibicao.columns]
@@ -1319,6 +1334,8 @@ def preparar_dataframe_exibicao(df_filtrado):
             "desc_operacao_atual": "Operação Atual",
             "desc_operador_atual": "Operador Atual",
             "Responsavel": "Responsavel",
+            "operacoes_percorridas": "Operações Percorridas",
+            "Alteracao": "Alteração",
         }
     )
 
