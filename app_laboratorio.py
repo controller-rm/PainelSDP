@@ -1230,16 +1230,14 @@ def preparar_dataframe_exibicao(df_filtrado):
 
     hoje = pd.Timestamp.today().normalize()
 
-    prev_dt = pd.to_datetime(df_filtrado["data_prev_entrega"], errors="coerce")
-    prev_dt = prev_dt.dt.normalize()
+    prev_dt = pd.to_datetime(df_filtrado["data_prev_entrega"], errors="coerce").dt.normalize()
 
     nw_dt = pd.to_datetime(
         df_filtrado["Nw_Data"].astype(str).str.strip(),
         format="%d/%m/%Y",
         dayfirst=True,
         errors="coerce"
-    )
-    nw_dt = nw_dt.dt.normalize()
+    ).dt.normalize()
 
     data_referencia = nw_dt.where(nw_dt.notna(), prev_dt)
     dias_atraso = (hoje - data_referencia).dt.days
@@ -1260,10 +1258,6 @@ def preparar_dataframe_exibicao(df_filtrado):
         "Nw_Data",
         "Prioridade",
         "Responsavel",
-        "Alteracao",
-        "desc_operacao_atual",
-        "desc_operador_atual",
-        "operacoes_percorridas",
         "codigo_original",
         "GP_codigo_grupo",
         "SGP_codigo_subgrupo",
@@ -1275,8 +1269,12 @@ def preparar_dataframe_exibicao(df_filtrado):
         df_exibicao["sequencia_atual"], errors="coerce"
     ).fillna(0).astype(int)
 
-    df_exibicao["Remover"] = df_exibicao["Remover"].fillna(False).astype(bool)
+    # Remover vira texto: "" ou "X"
+    df_exibicao["Remover"] = df_exibicao["Remover"].apply(
+        lambda x: "X" if str(x).strip().lower() in ["true", "1", "x"] else ""
+    )
 
+    # EXIBIÇÃO MAIS ENXUTA
     colunas_exibicao = [
         "Remover",
         "Prioridade",
@@ -1292,9 +1290,6 @@ def preparar_dataframe_exibicao(df_filtrado):
         "codigo_produto",
         "desc_cliente",
         "Auditoria SD",
-        "Cliente SD",
-        "Resultado SD",
-        "Observações SD",
         "codigo_original",
         "GP_codigo_grupo",
         "SGP_codigo_subgrupo",
@@ -1302,8 +1297,6 @@ def preparar_dataframe_exibicao(df_filtrado):
         "data_final_apontamento",
         "desc_operacao_atual",
         "desc_operador_atual",
-        "operacoes_percorridas",
-        "Alteracao",
     ]
 
     colunas_exibicao = [c for c in colunas_exibicao if c in df_exibicao.columns]
@@ -1326,27 +1319,19 @@ def preparar_dataframe_exibicao(df_filtrado):
             "desc_operacao_atual": "Operação Atual",
             "desc_operador_atual": "Operador Atual",
             "Responsavel": "Responsavel",
-            "operacoes_percorridas": "Operações Percorridas",
-            "Alteracao": "Alteração",
         }
     )
-
 
 def render_grid(df_exibicao):
     st.markdown("### Posição das SDs / OFs do Laboratório")
 
     df_grid = df_exibicao.copy()
 
-    if "Remover" in df_grid.columns:
-        df_grid["Remover"] = (
-            df_grid["Remover"]
-            .replace({"True": True, "False": False, "true": True, "false": False, "": False})
-            .fillna(False)
-            .astype(bool)
-        )
-
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
+
+    if "Remover" in df_grid.columns:
+        df_grid["Remover"] = df_grid["Remover"].fillna("").astype(str).str.upper().replace({"TRUE": "X", "FALSE": ""})
 
     gb = GridOptionsBuilder.from_dataframe(df_grid)
 
@@ -1368,74 +1353,30 @@ def render_grid(df_exibicao):
         rowHeight=38,
         getRowStyle=row_style,
         suppressHorizontalScroll=False,
-        ensureDomOrder=True,
     )
 
-    gb.configure_column(
-        "Remover",
-        headerName="Remover",
-        editable=True,
-        type=["booleanColumn"],
-        cellRenderer="agCheckboxCellRenderer",
-        cellEditor="agCheckboxCellEditor",
-        width=90,
-        minWidth=90,
-        maxWidth=90,
-        pinned="left",
-    )
+    gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
+    gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
+    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=170, pinned="left")
+    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110, pinned="left")
 
-    gb.configure_column(
-        "Prioridade",
-        editable=True,
-        cellEditor=prioridade_editor,
-        cellStyle=prioridade_style,
-        width=90,
-        minWidth=90,
-        maxWidth=100,
-        pinned="left",
-    )
-
-    gb.configure_column(
-        "Responsavel",
-        editable=True,
-        cellEditor="agTextCellEditor",
-        width=170,
-        minWidth=140,
-        pinned="left",
-    )
-
-    gb.configure_column(
-        "Nw_Data",
-        editable=True,
-        cellEditor=date_mask_editor,
-        cellStyle=cell_style_date,
-        width=110,
-        minWidth=105,
-        pinned="left",
-    )
-
-    gb.configure_column("Dias Atraso", width=95, minWidth=90)
-    gb.configure_column("Semáforo", width=85, minWidth=80)
-    gb.configure_column("Abertura", width=110, minWidth=105)
-    gb.configure_column("Prev. Entrega", width=120, minWidth=115)
-    gb.configure_column("Origem", width=80, minWidth=75)
-    gb.configure_column("Nro OF", width=125, minWidth=120)
-    gb.configure_column("Status OF", width=85, minWidth=80)
-    gb.configure_column("Código Produto", width=130, minWidth=120)
-    gb.configure_column("Cliente", width=260, minWidth=220)
-    gb.configure_column("Auditoria SD", width=130, minWidth=120)
-    gb.configure_column("Cliente SD", width=240, minWidth=220, hide=True)
-    gb.configure_column("Resultado SD", width=240, minWidth=220, hide=True)
-    gb.configure_column("Observações SD", width=280, minWidth=240, hide=True)
-    gb.configure_column("Código Original", width=130, minWidth=120)
-    gb.configure_column("Grupo", width=85, minWidth=80)
-    gb.configure_column("Subgrupo", width=90, minWidth=85)
-    gb.configure_column("Sequência Atual", width=110, minWidth=105)
-    gb.configure_column("Data Final", width=110, minWidth=105)
-    gb.configure_column("Operação Atual", width=180, minWidth=160)
-    gb.configure_column("Operador Atual", width=170, minWidth=150)
-    gb.configure_column("Operações Percorridas", width=320, minWidth=260, hide=True)
-    gb.configure_column("Alteração", width=420, minWidth=300, hide=True)
+    gb.configure_column("Dias Atraso", width=95)
+    gb.configure_column("Semáforo", width=85)
+    gb.configure_column("Abertura", width=110)
+    gb.configure_column("Prev. Entrega", width=120)
+    gb.configure_column("Origem", width=80)
+    gb.configure_column("Nro OF", width=125)
+    gb.configure_column("Status OF", width=85)
+    gb.configure_column("Código Produto", width=130)
+    gb.configure_column("Cliente", width=260)
+    gb.configure_column("Auditoria SD", width=130)
+    gb.configure_column("Código Original", width=130)
+    gb.configure_column("Grupo", width=85)
+    gb.configure_column("Subgrupo", width=90)
+    gb.configure_column("Sequência Atual", width=110)
+    gb.configure_column("Data Final", width=110)
+    gb.configure_column("Operação Atual", width=180)
+    gb.configure_column("Operador Atual", width=170)
 
     grid_response = AgGrid(
         df_grid,
@@ -1463,18 +1404,6 @@ def render_grid(df_exibicao):
     )
 
     df_editado = pd.DataFrame(grid_response["data"])
-
-    if (
-        df_editado is not None
-        and not df_editado.empty
-        and "Remover" in df_editado.columns
-    ):
-        df_editado["Remover"] = (
-            df_editado["Remover"]
-            .replace({"True": True, "False": False, "true": True, "false": False, "": False})
-            .fillna(False)
-            .astype(bool)
-        )
 
     if (
         df_editado is not None
@@ -1829,9 +1758,16 @@ def main():
                     )
                 if "Alteração" in df_para_salvar.columns and "Alteracao" not in df_para_salvar.columns:
                     df_para_salvar = df_para_salvar.rename(columns={"Alteração": "Alteracao"})
-
+### alterado aqui
                 if "Remover" in df_para_salvar.columns:
-                    df_para_salvar["Remover"] = df_para_salvar["Remover"].fillna(False).astype(bool)
+                    df_para_salvar["Remover"] = (
+                        df_para_salvar["Remover"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                        .isin(["X", "TRUE", "1", "SIM"])
+                    )
 
                 erros = validar_grid_para_salvar(df_para_salvar)
 
