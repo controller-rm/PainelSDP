@@ -1345,7 +1345,12 @@ def render_grid(df_exibicao):
     st.markdown("### Posição das SDs / OFs do Laboratório")
 
     df_grid = df_exibicao.copy()
-
+    
+    if "Remover" in df_grid.columns:
+        df_grid["Remover"] = df_grid["Remover"].fillna(False).map(
+            lambda x: True if str(x).strip().lower() in ["true", "1", "sim", "x"] else False
+        ).astype(bool)
+        
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
 
@@ -1371,11 +1376,18 @@ def render_grid(df_exibicao):
     )
 
     gb.configure_column(
-    "Remover",
-    editable=True,
-    cellEditor="agCheckboxCellEditor",
-    cellRenderer="agCheckboxCellRenderer",
-    width=90
+        "Remover",
+        header_name="Remover",
+        editable=True,
+        type=["booleanColumn"],
+        cellEditor="agCheckboxCellEditor",
+        cellRenderer="agCheckboxCellRenderer",
+        suppressKeyboardEvent=JsCode("""
+        function(params) {
+            return false;
+        }
+        """),
+        width=95
     )
     
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90)
@@ -1392,15 +1404,15 @@ def render_grid(df_exibicao):
     gb.configure_column("Código Produto", width=130)
 
     # colunas com quebra automática
-    gb.configure_column("Cliente", width=260, wrapText=True, autoHeight=True)
-    gb.configure_column("Auditoria SD", width=140, wrapText=True, autoHeight=True)
-    gb.configure_column("Cliente SD", width=260, wrapText=True, autoHeight=True)
-    gb.configure_column("Resultado SD", width=260, wrapText=True)
-    gb.configure_column("Observações SD", width=320, wrapText=True, autoHeight=True)
-    gb.configure_column("Operação Atual", width=220, wrapText=True, autoHeight=True)
-    gb.configure_column("Operador Atual", width=180, wrapText=True)
-    
-    gb.configure_column("Operações Percorridas", width=500, wrapText=True, autoHeight=True)
+    gb.configure_column("Cliente", width=260, wrapText=False, autoHeight=False)
+    gb.configure_column("Auditoria SD", width=140, wrapText=False, autoHeight=False)
+    gb.configure_column("Cliente SD", width=260, wrapText=False, autoHeight=False)
+    gb.configure_column("Resultado SD", width=260, wrapText=False, autoHeight=False)
+    gb.configure_column("Observações SD", width=320, wrapText=False, autoHeight=False)
+    gb.configure_column("Operação Atual", width=220, wrapText=False, autoHeight=False)
+    gb.configure_column("Operador Atual", width=180, wrapText=False, autoHeight=False)
+    gb.configure_column("Operações Percorridas", width=500, wrapText=False, autoHeight=False)
+
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
     gb.configure_column("Subgrupo", width=90)
@@ -1464,7 +1476,12 @@ def render_grid(df_exibicao):
     )
 
     df_editado = pd.DataFrame(grid_response["data"])
-
+    
+    if "Remover" in df_editado.columns:
+        df_editado["Remover"] = df_editado["Remover"].fillna(False).map(
+            lambda x: True if str(x).strip().lower() in ["true", "1", "sim", "x"] else False
+        ).astype(bool)
+        
     if (
         df_editado is not None
         and not df_editado.empty
