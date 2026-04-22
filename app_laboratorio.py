@@ -1275,7 +1275,7 @@ def preparar_dataframe_exibicao(df_filtrado):
         df_exibicao["sequencia_atual"], errors="coerce"
     ).fillna(0).astype(int)
 
-    df_exibicao["Remover"] = df_exibicao["Remover"].fillna(False).astype(bool)
+    
 
     colunas_exibicao = [
         "Remover",
