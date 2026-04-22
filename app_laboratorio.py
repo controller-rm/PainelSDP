@@ -1337,6 +1337,9 @@ def render_grid(df_exibicao):
 
     df_grid = df_exibicao.copy()
 
+    if "Remover" in df_grid.columns:
+        df_grid["Remover"] = df_grid["Remover"].fillna(False).astype(bool)
+
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
 
@@ -1356,42 +1359,51 @@ def render_grid(df_exibicao):
         domLayout="normal",
         headerHeight=42,
         getRowStyle=row_style,
-        suppressHorizontalScroll=False
+        suppressHorizontalScroll=True
     )
 
-    gb.configure_column("Remover", editable=True, cellEditor="agCheckboxCellEditor", width=90, minWidth=80, maxWidth=100)
+    gb.configure_column(
+        "Remover",
+        editable=True,
+        cellRenderer="agCheckboxCellRenderer",
+        cellEditor="agCheckboxCellEditor",
+        width=90,
+        minWidth=80,
+        maxWidth=100
+    )
+
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=100)
-    gb.configure_column("Operações Percorridas", width=400, wrapText=True, autoHeight=True)
-    gb.configure_column("Responsavel",editable=True,cellEditor="agTextCellEditor",width=220)
-    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110)
-    gb.configure_column("Dias Atraso", width=110, type=["textColumn"])
-    gb.configure_column("Semáforo", width=90)
-    gb.configure_column("Alteração", width=800, wrapText=True, autoHeight=True)
-    gb.configure_column("Abertura", width=110)
-    gb.configure_column("Prev. Entrega", width=120)
-    gb.configure_column("Origem", width=90)
-    gb.configure_column("Nro OF", width=130)
-    gb.configure_column("Status OF", width=90)
-    gb.configure_column("Código Produto", width=130)
-    gb.configure_column("Cliente", width=240, wrapText=True, autoHeight=True)
-    gb.configure_column("Código Original", width=130)
-    gb.configure_column("Grupo", width=90)
-    gb.configure_column("Subgrupo", width=90)
-    gb.configure_column("Sequência Atual", width=110)
-    gb.configure_column("Data Final", width=120)
-    gb.configure_column("Operação Atual", width=220)
-    gb.configure_column("Operador Atual", width=180,wrapText=True, autoHeight=True)
-    gb.configure_column("Cliente SD", width=260)
-    gb.configure_column("Resultado SD", width=260, wrapText=True, autoHeight=True)
-    gb.configure_column("Observações SD", width=300, wrapText=True, autoHeight=True)
-    gb.configure_column("Auditoria SD", width=140, wrapText=True, autoHeight=True)
+    gb.configure_column("Operações Percorridas", width=320, wrapText=True, autoHeight=True)
+    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=160)
+    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=105)
+    gb.configure_column("Dias Atraso", width=95, type=["textColumn"])
+    gb.configure_column("Semáforo", width=85)
+    gb.configure_column("Alteração", width=320, wrapText=True, autoHeight=True)
+    gb.configure_column("Abertura", width=105)
+    gb.configure_column("Prev. Entrega", width=115)
+    gb.configure_column("Origem", width=75)
+    gb.configure_column("Nro OF", width=120)
+    gb.configure_column("Status OF", width=85)
+    gb.configure_column("Código Produto", width=120)
+    gb.configure_column("Cliente", width=230, wrapText=True, autoHeight=True)
+    gb.configure_column("Código Original", width=120)
+    gb.configure_column("Grupo", width=80)
+    gb.configure_column("Subgrupo", width=85)
+    gb.configure_column("Sequência Atual", width=105)
+    gb.configure_column("Data Final", width=105)
+    gb.configure_column("Operação Atual", width=180, wrapText=True, autoHeight=True)
+    gb.configure_column("Operador Atual", width=150, wrapText=True, autoHeight=True)
+    gb.configure_column("Cliente SD", width=220, wrapText=True, autoHeight=True)
+    gb.configure_column("Resultado SD", width=220, wrapText=True, autoHeight=True)
+    gb.configure_column("Observações SD", width=240, wrapText=True, autoHeight=True)
+    gb.configure_column("Auditoria SD", width=120, wrapText=True, autoHeight=True)
 
     grid_response = AgGrid(
         df_grid,
         gridOptions=gb.build(),
         update_mode=GridUpdateMode.MODEL_CHANGED,
         data_return_mode="AS_INPUT",
-        fit_columns_on_grid_load=False,
+        fit_columns_on_grid_load=True,
         allow_unsafe_jscode=True,
         enable_enterprise_modules=False,
         theme="streamlit",
@@ -1410,9 +1422,7 @@ def render_grid(df_exibicao):
         reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
     )
-    if "Responsável" in df_grid.columns:
-        df_grid["Responsável"] = df_grid["Responsável"].fillna("").astype(str).str.strip()
-        
+
     df_editado = pd.DataFrame(grid_response["data"])
 
     if (
