@@ -1438,10 +1438,14 @@ def render_grid(df_exibicao):
             },
             ".ag-body-horizontal-scroll": {
                 "display": "block !important",
-                "height": "14px !important",
+                "min-height": "16px !important",
+                "height": "16px !important",
+            },
+            ".ag-body-horizontal-scroll-viewport": {
+                "overflow-x": "scroll !important",
             },
             ".ag-center-cols-viewport": {
-                "overflow-x": "auto !important",
+                "overflow-x": "hidden !important",
             },
         },
         height=950,
