@@ -1435,8 +1435,6 @@ def render_grid(df_exibicao):
                 "padding-top": "6px",
                 "padding-bottom": "6px",
             },
-        
-            /* força estrutura do grid */
             ".ag-root-wrapper": {
                 "overflow": "visible !important",
             },
@@ -1450,8 +1448,6 @@ def render_grid(df_exibicao):
                 "overflow-x": "auto !important",
                 "overflow-y": "hidden !important",
             },
-        
-            /* barra horizontal sempre visível */
             ".ag-body-horizontal-scroll": {
                 "display": "block !important",
                 "visibility": "visible !important",
