@@ -1356,7 +1356,7 @@ def render_grid(df_exibicao):
         domLayout="normal",
         headerHeight=42,
         getRowStyle=row_style,
-        suppressHorizontalScroll=True
+        suppressHorizontalScroll=False
     )
 
     gb.configure_column(
