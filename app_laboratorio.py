@@ -1397,7 +1397,6 @@ def render_grid(df_exibicao):
         headerHeight=46,
         getRowStyle=row_style,
         suppressHorizontalScroll=False,
-        alwaysShowHorizontalScroll=True,
     )
 
     gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
@@ -1473,6 +1472,9 @@ def render_grid(df_exibicao):
                 "overflow-x": "auto !important",
                 "overflow-y": "hidden !important",
             },
+            ".ag-center-cols-container": {
+                "min-width": "max-content !important",
+            },
             ".ag-body-horizontal-scroll": {
                 "display": "block !important",
                 "visibility": "visible !important",
@@ -1485,13 +1487,7 @@ def render_grid(df_exibicao):
                 "background": "#f8fafc !important",
                 "border-top": "1px solid #cbd5e1 !important",
             },
-            ".ag-body-horizontal-scroll-viewport": {
-                "overflow-x": "scroll !important",
-            },
-            ".ag-body-horizontal-scroll-container": {
-                "min-height": "18px !important",
-                "height": "18px !important",
-            },
+            
         },
         height=780,
         reload_data=True,
