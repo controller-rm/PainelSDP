@@ -1348,7 +1348,13 @@ def render_grid(df_exibicao):
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
 
     if "Remover" in df_grid.columns:
-        df_grid["Remover"] = df_grid["Remover"].fillna("").astype(str).str.upper().replace({"TRUE": "X", "FALSE": ""})
+        df_grid["Remover"] = (
+            df_grid["Remover"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .replace({"TRUE": "X", "FALSE": ""})
+        )
 
     gb = GridOptionsBuilder.from_dataframe(df_grid)
 
@@ -1366,14 +1372,14 @@ def render_grid(df_exibicao):
 
     gb.configure_grid_options(
         domLayout="normal",
-        headerHeight=42,
+        headerHeight=46,
         getRowStyle=row_style,
         suppressHorizontalScroll=False,
     )
 
     gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
-    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=170, pinned="left")
+    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180, pinned="left")
     gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110, pinned="left")
 
     gb.configure_column("Dias Atraso", width=95)
@@ -1384,15 +1390,23 @@ def render_grid(df_exibicao):
     gb.configure_column("Nro OF", width=125)
     gb.configure_column("Status OF", width=85)
     gb.configure_column("Código Produto", width=130)
-    gb.configure_column("Cliente", width=260)
-    gb.configure_column("Auditoria SD", width=130)
+
+    # colunas com quebra automática
+    gb.configure_column("Cliente", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Auditoria SD", width=140, wrapText=True, autoHeight=True)
+    gb.configure_column("Cliente SD", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Resultado SD", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Observações SD", width=320, wrapText=True, autoHeight=True)
+    gb.configure_column("Operação Atual", width=220, wrapText=True, autoHeight=True)
+    gb.configure_column("Operador Atual", width=180, wrapText=True, autoHeight=True)
+    gb.configure_column("Operações Percorridas", width=420, wrapText=True, autoHeight=True)
+    gb.configure_column("Alteração", width=850, wrapText=True, autoHeight=True)
+
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
     gb.configure_column("Subgrupo", width=90)
     gb.configure_column("Sequência Atual", width=110)
     gb.configure_column("Data Final", width=110)
-    gb.configure_column("Operação Atual", width=180)
-    gb.configure_column("Operador Atual", width=170)
 
     grid_response = AgGrid(
         df_grid,
@@ -1407,13 +1421,27 @@ def render_grid(df_exibicao):
             ".ag-theme-streamlit .ag-header-cell-text": {
                 "font-size": "15px",
                 "font-weight": "700",
-                "white-space": "normal"
+                "white-space": "normal",
+                "line-height": "1.2",
+            },
+            ".ag-theme-streamlit .ag-header-cell-label": {
+                "white-space": "normal !important",
             },
             ".ag-theme-streamlit .ag-cell": {
                 "font-size": "14px",
                 "display": "flex",
-                "align-items": "center"
-            }
+                "align-items": "center",
+                "line-height": "1.35",
+                "padding-top": "6px",
+                "padding-bottom": "6px",
+            },
+            ".ag-body-horizontal-scroll": {
+                "display": "block !important",
+                "height": "14px !important",
+            },
+            ".ag-center-cols-viewport": {
+                "overflow-x": "auto !important",
+            },
         },
         height=950,
         reload_data=True,
