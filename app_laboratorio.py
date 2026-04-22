@@ -190,7 +190,31 @@ def aplicar_estilo_visual():
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }}
-
+#### 
+        /* =========================
+           AGGRID - liberar overflow do container
+        ========================= */
+        div[data-testid="stElementContainer"] {
+            overflow: visible !important;
+        }
+        
+        div[data-testid="stVerticalBlock"] {
+            overflow: visible !important;
+        }
+        
+        div[data-testid="stHorizontalBlock"] {
+            overflow: visible !important;
+        }
+        
+        /* wrapper do componente */
+        .element-container {
+            overflow: visible !important;
+        }
+        
+        /* iframe / componente customizado do aggrid */
+        iframe {
+            overflow: visible !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -1435,6 +1459,9 @@ def render_grid(df_exibicao):
                 "padding-top": "6px",
                 "padding-bottom": "6px",
             },
+            ".ag-root": {
+                "overflow": "visible !important",
+            },
             ".ag-root-wrapper": {
                 "overflow": "visible !important",
             },
@@ -1468,7 +1495,7 @@ def render_grid(df_exibicao):
                 "height": "18px !important",
             },
         },
-        height=820,
+        height=780,
         reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
     )
