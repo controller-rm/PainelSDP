@@ -1336,8 +1336,6 @@ def render_grid(df_exibicao):
     st.markdown("### Posição das SDs / OFs do Laboratório")
 
     df_grid = df_exibicao.copy()
-    if "Remover" in df_grid.columns:
-    df_grid["Remover"] = df_grid["Remover"].fillna(False).astype(bool)
     
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
