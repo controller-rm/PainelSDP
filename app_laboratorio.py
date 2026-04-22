@@ -1352,7 +1352,7 @@ def render_grid(df_exibicao):
         headerHeight=42,
         getRowStyle=row_style,
         suppressHorizontalScroll=False,
-    ))
+    )
 
     gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
