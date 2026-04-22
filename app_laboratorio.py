@@ -190,31 +190,29 @@ def aplicar_estilo_visual():
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }}
-#### 
+
         /* =========================
            AGGRID - liberar overflow do container
         ========================= */
-        div[data-testid="stElementContainer"] {
+        div[data-testid="stElementContainer"] {{
             overflow: visible !important;
-        }
+        }}
         
-        div[data-testid="stVerticalBlock"] {
+        div[data-testid="stVerticalBlock"] {{
             overflow: visible !important;
-        }
+        }}
         
-        div[data-testid="stHorizontalBlock"] {
+        div[data-testid="stHorizontalBlock"] {{
             overflow: visible !important;
-        }
+        }}
         
-        /* wrapper do componente */
-        .element-container {
+        .element-container {{
             overflow: visible !important;
-        }
+        }}
         
-        /* iframe / componente customizado do aggrid */
-        iframe {
+        iframe {{
             overflow: visible !important;
-        }
+        }}
         </style>
         """,
         unsafe_allow_html=True,
