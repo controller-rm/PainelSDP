@@ -1338,7 +1338,12 @@ def render_grid(df_exibicao):
     df_grid = df_exibicao.copy()
 
     if "Remover" in df_grid.columns:
-        df_grid["Remover"] = df_grid["Remover"].fillna(False).astype(bool)
+        df_grid["Remover"] = (
+            df_grid["Remover"]
+            .replace({"True": True, "False": False, "true": True, "false": False, "": False})
+            .fillna(False)
+            .astype(bool)
+        )
 
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
@@ -1349,7 +1354,9 @@ def render_grid(df_exibicao):
         editable=False,
         filter=True,
         sortable=True,
-        resizable=True
+        resizable=True,
+        wrapText=False,
+        autoHeight=False,
     )
 
     for col in df_grid.columns:
@@ -1358,52 +1365,84 @@ def render_grid(df_exibicao):
     gb.configure_grid_options(
         domLayout="normal",
         headerHeight=42,
+        rowHeight=38,
         getRowStyle=row_style,
-        suppressHorizontalScroll=True
+        suppressHorizontalScroll=False,
+        ensureDomOrder=True,
     )
 
     gb.configure_column(
         "Remover",
+        headerName="Remover",
         editable=True,
+        type=["booleanColumn"],
         cellRenderer="agCheckboxCellRenderer",
         cellEditor="agCheckboxCellEditor",
         width=90,
-        minWidth=80,
-        maxWidth=100
+        minWidth=90,
+        maxWidth=90,
+        pinned="left",
     )
 
-    gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=100)
-    gb.configure_column("Operações Percorridas", width=320, wrapText=True, autoHeight=True)
-    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=160)
-    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=105)
-    gb.configure_column("Dias Atraso", width=95, type=["textColumn"])
-    gb.configure_column("Semáforo", width=85)
-    gb.configure_column("Alteração", width=320, wrapText=True, autoHeight=True)
-    gb.configure_column("Abertura", width=105)
-    gb.configure_column("Prev. Entrega", width=115)
-    gb.configure_column("Origem", width=75)
-    gb.configure_column("Nro OF", width=120)
-    gb.configure_column("Status OF", width=85)
-    gb.configure_column("Código Produto", width=120)
-    gb.configure_column("Cliente", width=230, wrapText=True, autoHeight=True)
-    gb.configure_column("Código Original", width=120)
-    gb.configure_column("Grupo", width=80)
-    gb.configure_column("Subgrupo", width=85)
-    gb.configure_column("Sequência Atual", width=105)
-    gb.configure_column("Data Final", width=105)
-    gb.configure_column("Operação Atual", width=180, wrapText=True, autoHeight=True)
-    gb.configure_column("Operador Atual", width=150, wrapText=True, autoHeight=True)
-    gb.configure_column("Cliente SD", width=220, wrapText=True, autoHeight=True)
-    gb.configure_column("Resultado SD", width=220, wrapText=True, autoHeight=True)
-    gb.configure_column("Observações SD", width=240, wrapText=True, autoHeight=True)
-    gb.configure_column("Auditoria SD", width=120, wrapText=True, autoHeight=True)
+    gb.configure_column(
+        "Prioridade",
+        editable=True,
+        cellEditor=prioridade_editor,
+        cellStyle=prioridade_style,
+        width=90,
+        minWidth=90,
+        maxWidth=100,
+        pinned="left",
+    )
+
+    gb.configure_column(
+        "Responsavel",
+        editable=True,
+        cellEditor="agTextCellEditor",
+        width=170,
+        minWidth=140,
+        pinned="left",
+    )
+
+    gb.configure_column(
+        "Nw_Data",
+        editable=True,
+        cellEditor=date_mask_editor,
+        cellStyle=cell_style_date,
+        width=110,
+        minWidth=105,
+        pinned="left",
+    )
+
+    gb.configure_column("Dias Atraso", width=95, minWidth=90)
+    gb.configure_column("Semáforo", width=85, minWidth=80)
+    gb.configure_column("Abertura", width=110, minWidth=105)
+    gb.configure_column("Prev. Entrega", width=120, minWidth=115)
+    gb.configure_column("Origem", width=80, minWidth=75)
+    gb.configure_column("Nro OF", width=125, minWidth=120)
+    gb.configure_column("Status OF", width=85, minWidth=80)
+    gb.configure_column("Código Produto", width=130, minWidth=120)
+    gb.configure_column("Cliente", width=260, minWidth=220)
+    gb.configure_column("Auditoria SD", width=130, minWidth=120)
+    gb.configure_column("Cliente SD", width=240, minWidth=220, hide=True)
+    gb.configure_column("Resultado SD", width=240, minWidth=220, hide=True)
+    gb.configure_column("Observações SD", width=280, minWidth=240, hide=True)
+    gb.configure_column("Código Original", width=130, minWidth=120)
+    gb.configure_column("Grupo", width=85, minWidth=80)
+    gb.configure_column("Subgrupo", width=90, minWidth=85)
+    gb.configure_column("Sequência Atual", width=110, minWidth=105)
+    gb.configure_column("Data Final", width=110, minWidth=105)
+    gb.configure_column("Operação Atual", width=180, minWidth=160)
+    gb.configure_column("Operador Atual", width=170, minWidth=150)
+    gb.configure_column("Operações Percorridas", width=320, minWidth=260, hide=True)
+    gb.configure_column("Alteração", width=420, minWidth=300, hide=True)
 
     grid_response = AgGrid(
         df_grid,
         gridOptions=gb.build(),
         update_mode=GridUpdateMode.MODEL_CHANGED,
         data_return_mode="AS_INPUT",
-        fit_columns_on_grid_load=True,
+        fit_columns_on_grid_load=False,
         allow_unsafe_jscode=True,
         enable_enterprise_modules=False,
         theme="streamlit",
@@ -1413,7 +1452,7 @@ def render_grid(df_exibicao):
                 "font-weight": "700"
             },
             ".ag-theme-streamlit .ag-cell": {
-                "font-size": "16px",
+                "font-size": "14px",
                 "display": "flex",
                 "align-items": "center"
             }
@@ -1428,12 +1467,23 @@ def render_grid(df_exibicao):
     if (
         df_editado is not None
         and not df_editado.empty
+        and "Remover" in df_editado.columns
+    ):
+        df_editado["Remover"] = (
+            df_editado["Remover"]
+            .replace({"True": True, "False": False, "true": True, "false": False, "": False})
+            .fillna(False)
+            .astype(bool)
+        )
+
+    if (
+        df_editado is not None
+        and not df_editado.empty
         and "Responsavel" in df_editado.columns
         and "Responsavel" in df_grid.columns
     ):
         serie_editado = df_editado["Responsavel"].fillna("").astype(str).str.strip()
         serie_grid = df_grid["Responsavel"].fillna("").astype(str).str.strip()
-
         mask_vazio = serie_editado.eq("")
 
         if len(df_editado) == len(df_grid):
