@@ -1400,9 +1400,8 @@ def render_grid(df_exibicao):
     gb.configure_column("Observações SD", width=320, wrapText=True, autoHeight=True)
     gb.configure_column("Operação Atual", width=220, wrapText=True, autoHeight=True)
     gb.configure_column("Operador Atual", width=180, wrapText=True, autoHeight=True)
-    gb.configure_column("Operações Percorridas", width=420, wrapText=True, autoHeight=True)
-    gb.configure_column("Alteração", width=850, wrapText=True, autoHeight=True)
-
+    gb.configure_column("Alteração", width=950, wrapText=True, autoHeight=True)
+    gb.configure_column("Operações Percorridas", width=500, wrapText=True, autoHeight=True)
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
     gb.configure_column("Subgrupo", width=90)
