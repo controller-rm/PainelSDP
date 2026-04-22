@@ -762,9 +762,13 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
     df_edit["Prioridade"] = df_edit["Prioridade"].str.upper()
     
 
+    # mantém linhas válidas OU marcadas para remoção
     df_edit = df_edit[
-        (df_edit["Nro_OF"].astype(str).str.strip() != "")
-        & (df_edit["Codigo_Produto"].astype(str).str.strip() != "")
+        (
+            (df_edit["Nro_OF"].astype(str).str.strip() != "")
+            & (df_edit["Codigo_Produto"].astype(str).str.strip() != "")
+        )
+        | (df_edit["Remover"] == True)
     ].copy()
 
     df_edit = df_edit.drop_duplicates(subset=["Nro_OF", "Codigo_Produto"], keep="last")
