@@ -1472,7 +1472,7 @@ def render_grid(df_exibicao):
                 "height": "18px !important",
             },
         },
-        height=950,
+        height=820,
         reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
     )
