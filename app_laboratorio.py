@@ -191,29 +191,7 @@ def aplicar_estilo_visual():
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }}
 
-        /* =========================
-           AGGRID - liberar overflow do container
-        ========================= */
-        div[data-testid="stElementContainer"] {{
-            overflow: visible !important;
-        }}
-        
-        div[data-testid="stVerticalBlock"] {{
-            overflow: visible !important;
-        }}
-        
-        div[data-testid="stHorizontalBlock"] {{
-            overflow: visible !important;
-        }}
-        
-        .element-container {{
-            overflow: visible !important;
-        }}
-        
-        iframe {{
-            overflow: visible !important;
-        }}
-        </style>
+       </style>
         """,
         unsafe_allow_html=True,
     )
@@ -1306,9 +1284,7 @@ def preparar_dataframe_exibicao(df_filtrado):
     ).fillna(0).astype(int)
 
     # Remover continua como texto para estabilidade no Cloud
-    df_exibicao["Remover"] = df_exibicao["Remover"].apply(
-        lambda x: "X" if str(x).strip().lower() in ["true", "1", "x"] else ""
-    )
+    df_exibicao["Remover"] = df_exibicao["Remover"].fillna(False).astype(bool)
 
     # VOLTAMOS COM TODAS AS COLUNAS
     colunas_exibicao = [
@@ -1337,7 +1313,7 @@ def preparar_dataframe_exibicao(df_filtrado):
         "desc_operacao_atual",
         "desc_operador_atual",
         "operacoes_percorridas",
-        "Alteracao",
+       
     ]
 
     colunas_exibicao = [c for c in colunas_exibicao if c in df_exibicao.columns]
@@ -1361,7 +1337,7 @@ def preparar_dataframe_exibicao(df_filtrado):
             "desc_operador_atual": "Operador Atual",
             "Responsavel": "Responsavel",
             "operacoes_percorridas": "Operações Percorridas",
-            "Alteracao": "Alteração",
+            
         }
     )
 
@@ -1372,15 +1348,6 @@ def render_grid(df_exibicao):
 
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
-
-    if "Remover" in df_grid.columns:
-        df_grid["Remover"] = (
-            df_grid["Remover"]
-            .fillna("")
-            .astype(str)
-            .str.upper()
-            .replace({"TRUE": "X", "FALSE": ""})
-        )
 
     gb = GridOptionsBuilder.from_dataframe(df_grid)
 
@@ -1403,10 +1370,17 @@ def render_grid(df_exibicao):
         suppressHorizontalScroll=False,
     )
 
-    gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
-    gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
-    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180, pinned="left")
-    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110, pinned="left")
+    gb.configure_column(
+    "Remover",
+    editable=True,
+    cellEditor="agCheckboxCellEditor",
+    cellRenderer="agCheckboxCellRenderer",
+    width=90
+    )
+    
+    gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90)
+    gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180)
+    gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110)
 
     gb.configure_column("Dias Atraso", width=95)
     gb.configure_column("Semáforo", width=85)
@@ -1425,7 +1399,7 @@ def render_grid(df_exibicao):
     gb.configure_column("Observações SD", width=320, wrapText=True, autoHeight=True)
     gb.configure_column("Operação Atual", width=220, wrapText=True, autoHeight=True)
     gb.configure_column("Operador Atual", width=180, wrapText=True, autoHeight=True)
-    gb.configure_column("Alteração", width=950, wrapText=True, autoHeight=True)
+    
     gb.configure_column("Operações Percorridas", width=500, wrapText=True, autoHeight=True)
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
@@ -1459,15 +1433,6 @@ def render_grid(df_exibicao):
                 "line-height": "1.35",
                 "padding-top": "6px",
                 "padding-bottom": "6px",
-            },
-            ".ag-root": {
-                "overflow": "visible !important",
-            },
-            ".ag-root-wrapper": {
-                "overflow": "visible !important",
-            },
-            ".ag-root-wrapper-body": {
-                "overflow": "visible !important",
             },
             ".ag-body-viewport": {
                 "overflow-y": "auto !important",
@@ -1855,14 +1820,7 @@ def main():
                     df_para_salvar = df_para_salvar.rename(columns={"Alteração": "Alteracao"})
 ### alterado aqui
                 if "Remover" in df_para_salvar.columns:
-                    df_para_salvar["Remover"] = (
-                        df_para_salvar["Remover"]
-                        .fillna("")
-                        .astype(str)
-                        .str.strip()
-                        .str.upper()
-                        .isin(["X", "TRUE", "1", "SIM"])
-                    )
+                    df_para_salvar["Remover"] = df_para_salvar["Remover"].fillna(False).astype(bool)
 
                 erros = validar_grid_para_salvar(df_para_salvar)
 
