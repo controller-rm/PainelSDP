@@ -1399,7 +1399,7 @@ def render_grid(df_exibicao):
         gridOptions=gb.build(),
         update_mode=GridUpdateMode.MODEL_CHANGED,
         data_return_mode="AS_INPUT",
-        fit_columns_on_grid_load=True,
+        fit_columns_on_grid_load=False,
         allow_unsafe_jscode=True,
         enable_enterprise_modules=False,
         theme="streamlit",
