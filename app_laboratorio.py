@@ -1389,7 +1389,8 @@ def render_grid(df_exibicao):
         custom_css={
             ".ag-theme-streamlit .ag-header-cell-text": {
                 "font-size": "15px",
-                "font-weight": "700"
+                "font-weight": "700",
+                "white-space": "normal"
             },
             ".ag-theme-streamlit .ag-cell": {
                 "font-size": "14px",
