@@ -1410,14 +1410,14 @@ def render_grid(df_exibicao):
 
     # colunas com quebra automática
     
-    gb.configure_column("Cliente", width=140, wrapText=False, autoHeight=False)
+    gb.configure_column("Cliente", width=260, wrapText=False, autoHeight=True)
     gb.configure_column("Auditoria SD", width=140, wrapText=False, autoHeight=False)
     gb.configure_column("Cliente SD", width=260, wrapText=False, autoHeight=False)
     gb.configure_column("Resultado SD", width=260, wrapText=False, autoHeight=False)
     gb.configure_column("Observações SD", width=320, wrapText=False, autoHeight=False)
     gb.configure_column("Operação Atual", width=220, wrapText=False, autoHeight=False)
     gb.configure_column("Operador Atual", width=180, wrapText=False, autoHeight=False)
-    gb.configure_column("Operações Percorridas", width=500, wrapText=False, autoHeight=False)
+    gb.configure_column("Operações Percorridas", width=500, wrapText=False, autoHeight=True)
 
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
