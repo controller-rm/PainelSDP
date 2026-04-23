@@ -1435,16 +1435,6 @@ def render_grid(df_exibicao):
                 "white-space": "normal",
                 "line-height": "1.2",
             },
-            ".ag-center-cols-container": {
-                "min-width": "max-content !important",
-            },
-            ".ag-root-wrapper": {
-                "overflow-x": "auto !important",
-            },
-            
-            ".ag-root-wrapper-body": {
-                "overflow-x": "auto !important",
-            },
             ".ag-theme-streamlit .ag-header-cell-label": {
                 "white-space": "normal !important",
             },
@@ -1456,38 +1446,29 @@ def render_grid(df_exibicao):
                 "padding-top": "6px",
                 "padding-bottom": "6px",
             },
-            ".ag-body-viewport": {
-                "overflow-y": "auto !important",
+        
+            ".ag-root-wrapper": {
+                "overflow-x": "auto !important",
             },
+            ".ag-root-wrapper-body": {
+                "overflow-x": "auto !important",
+            },
+        
+            ".ag-center-cols-container": {
+                "min-width": "max-content !important",
+            },
+        
             ".ag-center-cols-viewport": {
                 "overflow-x": "auto !important",
                 "overflow-y": "auto !important",
             },
-            ".ag-center-cols-container": {
-                "min-width": "max-content !important",
-            },
-            
+        
             ".ag-body-horizontal-scroll": {
                 "display": "block !important",
                 "visibility": "visible !important",
                 "opacity": "1 !important",
                 "height": "14px !important",
             },
-
-            
-            ".ag-body-horizontal-scroll": {
-                "display": "block !important",
-                "visibility": "visible !important",
-                "opacity": "1 !important",
-                "min-height": "18px !important",
-                "height": "18px !important",
-                "position": "sticky !important",
-                "bottom": "0 !important",
-                "z-index": "20 !important",
-                "background": "#f8fafc !important",
-                "border-top": "1px solid #cbd5e1 !important",
-            },
-            
         },
         height=780,
         reload_data=True,
