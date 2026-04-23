@@ -1428,48 +1428,6 @@ def render_grid(df_exibicao):
         allow_unsafe_jscode=True,
         enable_enterprise_modules=False,
         theme="streamlit",
-        custom_css={
-            ".ag-theme-streamlit .ag-header-cell-text": {
-                "font-size": "15px",
-                "font-weight": "700",
-                "white-space": "normal",
-                "line-height": "1.2",
-            },
-            ".ag-theme-streamlit .ag-header-cell-label": {
-                "white-space": "normal !important",
-            },
-            ".ag-theme-streamlit .ag-cell": {
-                "font-size": "14px",
-                "display": "flex",
-                "align-items": "center",
-                "line-height": "1.35",
-                "padding-top": "6px",
-                "padding-bottom": "6px",
-            },
-        
-            ".ag-root-wrapper": {
-                "overflow-x": "auto !important",
-            },
-            ".ag-root-wrapper-body": {
-                "overflow-x": "auto !important",
-            },
-        
-            ".ag-center-cols-container": {
-                "min-width": "max-content !important",
-            },
-        
-            ".ag-center-cols-viewport": {
-                "overflow-x": "auto !important",
-                "overflow-y": "auto !important",
-            },
-        
-            ".ag-body-horizontal-scroll": {
-                "display": "block !important",
-                "visibility": "visible !important",
-                "opacity": "1 !important",
-                "height": "14px !important",
-            },
-        },
         height=780,
         reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
