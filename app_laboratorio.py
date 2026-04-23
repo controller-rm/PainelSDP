@@ -1393,6 +1393,7 @@ def render_grid(df_exibicao):
     #gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90)
     #gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180)
     #gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110)
+    
     gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
     gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180, pinned="left")
@@ -1408,7 +1409,8 @@ def render_grid(df_exibicao):
     gb.configure_column("Código Produto", width=130)
 
     # colunas com quebra automática
-    gb.configure_column("Cliente", width=260, wrapText=False, autoHeight=False)
+    
+    gb.configure_column("Cliente", width=140, wrapText=False, autoHeight=False)
     gb.configure_column("Auditoria SD", width=140, wrapText=False, autoHeight=False)
     gb.configure_column("Cliente SD", width=260, wrapText=False, autoHeight=False)
     gb.configure_column("Resultado SD", width=260, wrapText=False, autoHeight=False)
