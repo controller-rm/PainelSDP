@@ -15,6 +15,10 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from services.laboratorio_service import carregar_ofs_laboratorio
 
 
+if st.query_params.get("ping") == "1":
+    st.write("pong")
+    st.stop()
+
 st.set_page_config(
     page_title="Painel Laboratório",
     page_icon="🧪",
