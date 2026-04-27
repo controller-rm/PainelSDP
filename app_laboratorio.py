@@ -1,5 +1,17 @@
 from __future__ import annotations
+import streamlit as st
 
+st.set_page_config(
+    page_title="Painel Laboratório",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+if st.query_params.get("ping") == "1":
+    st.write("pong")
+    st.stop()
+    
 import os
 import re
 import time
@@ -10,21 +22,10 @@ from io import BytesIO
 from st_aggrid import JsCode
 
 import pandas as pd
-import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from services.laboratorio_service import carregar_ofs_laboratorio
 
 
-if st.query_params.get("ping") == "1":
-    st.write("pong")
-    st.stop()
-
-st.set_page_config(
-    page_title="Painel Laboratório",
-    page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
 
 ARQUIVO_BANCO = "banco_laboratorio.txt"
 ARQUIVO_LOGO_SIDEBAR = "Controller.png"
