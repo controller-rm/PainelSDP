@@ -25,13 +25,10 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from services.laboratorio_service import carregar_ofs_laboratorio
 
-
-
 ARQUIVO_BANCO = "banco_laboratorio.txt"
 ARQUIVO_LOGO_SIDEBAR = "Controller.png"
 ARQUIVO_LOGO_DIREITA = "Logo_ADXW.bmp"
 ARQUIVO_FUNDO = "Auditor.png"
-
 
 def inicializar_estado_app():
     defaults = {
@@ -227,10 +224,8 @@ def card_kpi(titulo, valor, delta=None):
     </div>
     """, unsafe_allow_html=True)
 
-
 inicializar_estado_app()
 aplicar_estilo_visual()
-
 
 def normalizar_texto(valor):
     if pd.isna(valor):
@@ -613,13 +608,11 @@ def render_card_kpi(titulo, valor):
         unsafe_allow_html=True,
     )
 
-
 def iniciar_loading():
     status_placeholder = st.empty()
     progress_bar = st.progress(0)
     start_time = time.time()
     return status_placeholder, progress_bar, start_time
-
 
 def atualizar_loading(status_placeholder, progress_bar, mensagem, etapa, total_etapas, start_time):
     percentual = int((etapa / total_etapas) * 100)
