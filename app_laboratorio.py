@@ -1433,7 +1433,7 @@ def render_grid(df_exibicao):
         enable_enterprise_modules=False,
         theme="streamlit",
         height=780,
-        #reload_data=True,
+        reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
     )
 
