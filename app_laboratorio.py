@@ -1,17 +1,5 @@
 from __future__ import annotations
-import streamlit as st
 
-st.set_page_config(
-    page_title="Painel Laboratório",
-    page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
-if st.query_params.get("ping") == "1":
-    st.write("pong")
-    st.stop()
-    
 import os
 import re
 import time
@@ -22,10 +10,17 @@ from io import BytesIO
 from st_aggrid import JsCode
 
 import pandas as pd
+import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from services.laboratorio_service import carregar_ofs_laboratorio
 
 
+st.set_page_config(
+    page_title="Painel Laboratório",
+    page_icon="🧪",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 ARQUIVO_BANCO = "banco_laboratorio.txt"
 ARQUIVO_LOGO_SIDEBAR = "Controller.png"
@@ -196,7 +191,29 @@ def aplicar_estilo_visual():
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }}
 
-       </style>
+        /* =========================
+           AGGRID - liberar overflow do container
+        ========================= */
+        div[data-testid="stElementContainer"] {{
+            overflow: visible !important;
+        }}
+        
+        div[data-testid="stVerticalBlock"] {{
+            overflow: visible !important;
+        }}
+        
+        div[data-testid="stHorizontalBlock"] {{
+            overflow: visible !important;
+        }}
+        
+        .element-container {{
+            overflow: visible !important;
+        }}
+        
+        iframe {{
+            overflow: visible !important;
+        }}
+        </style>
         """,
         unsafe_allow_html=True,
     )
@@ -745,13 +762,9 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
     df_edit["Prioridade"] = df_edit["Prioridade"].str.upper()
     
 
-    # mantém linhas válidas OU marcadas para remoção
     df_edit = df_edit[
-        (
-            (df_edit["Nro_OF"].astype(str).str.strip() != "")
-            & (df_edit["Codigo_Produto"].astype(str).str.strip() != "")
-        )
-        | (df_edit["Remover"] == True)
+        (df_edit["Nro_OF"].astype(str).str.strip() != "")
+        & (df_edit["Codigo_Produto"].astype(str).str.strip() != "")
     ].copy()
 
     df_edit = df_edit.drop_duplicates(subset=["Nro_OF", "Codigo_Produto"], keep="last")
@@ -1289,7 +1302,9 @@ def preparar_dataframe_exibicao(df_filtrado):
     ).fillna(0).astype(int)
 
     # Remover continua como texto para estabilidade no Cloud
-    df_exibicao["Remover"] = df_exibicao["Remover"].fillna(False).astype(bool)
+    df_exibicao["Remover"] = df_exibicao["Remover"].apply(
+        lambda x: "X" if str(x).strip().lower() in ["true", "1", "x"] else ""
+    )
 
     # VOLTAMOS COM TODAS AS COLUNAS
     colunas_exibicao = [
@@ -1318,7 +1333,7 @@ def preparar_dataframe_exibicao(df_filtrado):
         "desc_operacao_atual",
         "desc_operador_atual",
         "operacoes_percorridas",
-       
+        "Alteracao",
     ]
 
     colunas_exibicao = [c for c in colunas_exibicao if c in df_exibicao.columns]
@@ -1342,7 +1357,7 @@ def preparar_dataframe_exibicao(df_filtrado):
             "desc_operador_atual": "Operador Atual",
             "Responsavel": "Responsavel",
             "operacoes_percorridas": "Operações Percorridas",
-            
+            "Alteracao": "Alteração",
         }
     )
 
@@ -1350,14 +1365,18 @@ def render_grid(df_exibicao):
     st.markdown("### Posição das SDs / OFs do Laboratório")
 
     df_grid = df_exibicao.copy()
-    
-    if "Remover" in df_grid.columns:
-        df_grid["Remover"] = df_grid["Remover"].fillna(False).map(
-            lambda x: True if str(x).strip().lower() in ["true", "1", "sim", "x"] else False
-        ).astype(bool)
-        
+
     if "Responsavel" in df_grid.columns:
         df_grid["Responsavel"] = df_grid["Responsavel"].fillna("").astype(str).str.strip()
+
+    if "Remover" in df_grid.columns:
+        df_grid["Remover"] = (
+            df_grid["Remover"]
+            .fillna("")
+            .astype(str)
+            .str.upper()
+            .replace({"TRUE": "X", "FALSE": ""})
+        )
 
     gb = GridOptionsBuilder.from_dataframe(df_grid)
 
@@ -1378,27 +1397,9 @@ def render_grid(df_exibicao):
         headerHeight=46,
         getRowStyle=row_style,
         suppressHorizontalScroll=False,
+        alwaysShowHorizontalScroll=True,
     )
 
-    gb.configure_column(
-        "Remover",
-        header_name="Remover",
-        editable=True,
-        type=["booleanColumn"],
-        cellEditor="agCheckboxCellEditor",
-        cellRenderer="agCheckboxCellRenderer",
-        suppressKeyboardEvent=JsCode("""
-        function(params) {
-            return false;
-        }
-        """),
-        width=95
-    )
-    
-    #gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90)
-    #gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180)
-    #gb.configure_column("Nw_Data", editable=True, cellEditor=date_mask_editor, cellStyle=cell_style_date, width=110)
-    
     gb.configure_column("Remover", editable=True, cellEditor="agTextCellEditor", width=90, pinned="left")
     gb.configure_column("Prioridade", editable=True, cellEditor=prioridade_editor, cellStyle=prioridade_style, width=90, pinned="left")
     gb.configure_column("Responsavel", editable=True, cellEditor="agTextCellEditor", width=180, pinned="left")
@@ -1414,16 +1415,15 @@ def render_grid(df_exibicao):
     gb.configure_column("Código Produto", width=130)
 
     # colunas com quebra automática
-    
-    gb.configure_column("Cliente", width=260, wrapText=False, autoHeight=True)
-    gb.configure_column("Auditoria SD", width=140, wrapText=False, autoHeight=False)
-    gb.configure_column("Cliente SD", width=260, wrapText=False, autoHeight=False)
-    gb.configure_column("Resultado SD", width=260, wrapText=False, autoHeight=False)
-    gb.configure_column("Observações SD", width=320, wrapText=False, autoHeight=False)
-    gb.configure_column("Operação Atual", width=220, wrapText=False, autoHeight=False)
-    gb.configure_column("Operador Atual", width=180, wrapText=False, autoHeight=False)
-    gb.configure_column("Operações Percorridas", width=500, wrapText=False, autoHeight=True)
-
+    gb.configure_column("Cliente", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Auditoria SD", width=140, wrapText=True, autoHeight=True)
+    gb.configure_column("Cliente SD", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Resultado SD", width=260, wrapText=True, autoHeight=True)
+    gb.configure_column("Observações SD", width=320, wrapText=True, autoHeight=True)
+    gb.configure_column("Operação Atual", width=220, wrapText=True, autoHeight=True)
+    gb.configure_column("Operador Atual", width=180, wrapText=True, autoHeight=True)
+    gb.configure_column("Alteração", width=950, wrapText=True, autoHeight=True)
+    gb.configure_column("Operações Percorridas", width=500, wrapText=True, autoHeight=True)
     gb.configure_column("Código Original", width=130)
     gb.configure_column("Grupo", width=85)
     gb.configure_column("Subgrupo", width=90)
@@ -1439,18 +1439,67 @@ def render_grid(df_exibicao):
         allow_unsafe_jscode=True,
         enable_enterprise_modules=False,
         theme="streamlit",
+        custom_css={
+            ".ag-theme-streamlit .ag-header-cell-text": {
+                "font-size": "15px",
+                "font-weight": "700",
+                "white-space": "normal",
+                "line-height": "1.2",
+            },
+            ".ag-theme-streamlit .ag-header-cell-label": {
+                "white-space": "normal !important",
+            },
+            ".ag-theme-streamlit .ag-cell": {
+                "font-size": "14px",
+                "display": "flex",
+                "align-items": "center",
+                "line-height": "1.35",
+                "padding-top": "6px",
+                "padding-bottom": "6px",
+            },
+            ".ag-root": {
+                "overflow": "visible !important",
+            },
+            ".ag-root-wrapper": {
+                "overflow": "visible !important",
+            },
+            ".ag-root-wrapper-body": {
+                "overflow": "visible !important",
+            },
+            ".ag-body-viewport": {
+                "overflow-y": "auto !important",
+            },
+            ".ag-center-cols-viewport": {
+                "overflow-x": "auto !important",
+                "overflow-y": "hidden !important",
+            },
+            ".ag-body-horizontal-scroll": {
+                "display": "block !important",
+                "visibility": "visible !important",
+                "opacity": "1 !important",
+                "min-height": "18px !important",
+                "height": "18px !important",
+                "position": "sticky !important",
+                "bottom": "0 !important",
+                "z-index": "20 !important",
+                "background": "#f8fafc !important",
+                "border-top": "1px solid #cbd5e1 !important",
+            },
+            ".ag-body-horizontal-scroll-viewport": {
+                "overflow-x": "scroll !important",
+            },
+            ".ag-body-horizontal-scroll-container": {
+                "min-height": "18px !important",
+                "height": "18px !important",
+            },
+        },
         height=780,
         reload_data=True,
         key=f"grid_lab_{st.session_state['grid_key']}",
     )
 
     df_editado = pd.DataFrame(grid_response["data"])
-    
-    if "Remover" in df_editado.columns:
-        df_editado["Remover"] = df_editado["Remover"].fillna(False).map(
-            lambda x: True if str(x).strip().lower() in ["true", "1", "sim", "x"] else False
-        ).astype(bool)
-        
+
     if (
         df_editado is not None
         and not df_editado.empty
@@ -1806,7 +1855,14 @@ def main():
                     df_para_salvar = df_para_salvar.rename(columns={"Alteração": "Alteracao"})
 ### alterado aqui
                 if "Remover" in df_para_salvar.columns:
-                    df_para_salvar["Remover"] = df_para_salvar["Remover"].fillna(False).astype(bool)
+                    df_para_salvar["Remover"] = (
+                        df_para_salvar["Remover"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.upper()
+                        .isin(["X", "TRUE", "1", "SIM"])
+                    )
 
                 erros = validar_grid_para_salvar(df_para_salvar)
 
