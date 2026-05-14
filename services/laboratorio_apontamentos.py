@@ -1,5 +1,5 @@
 import pandas as pd
-from database import get_connection
+from database import conectar_erp
 
 
 def limpar_texto(valor) -> str:
@@ -62,7 +62,7 @@ def montar_chave_apontamento(numero_of, produto) -> str:
 
 
 def carregar_apontamentos() -> pd.DataFrame:
-    conn = get_connection()
+    conn = None
 
     sql = """
         SELECT
@@ -76,24 +76,27 @@ def carregar_apontamentos() -> pd.DataFrame:
     """
 
     try:
+        conn = conectar_erp()
         df = pd.read_sql(sql, conn)
-    finally:
-        conn.close()
+        return df
 
-    return df
+    finally:
+        if conn:
+            conn.close()
 
 
 def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
     df = df_apontamento.copy()
 
     colunas_minimas = ["numero_of", "produto", "sequencia_of", "desc_operacao"]
+
     for col in colunas_minimas:
         if col not in df.columns:
             raise KeyError(f"A coluna '{col}' não existe na tabela APONTAMENTO.")
 
     if "desc_operador" not in df.columns:
         df["desc_operador"] = ""
-    
+
     if "data_final" not in df.columns:
         df["data_final"] = None
 
@@ -114,6 +117,16 @@ def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
 
     df = df[df["chave_of"] != ""].copy()
 
+    if df.empty:
+        return pd.DataFrame(columns=[
+            "chave_of",
+            "operacoes_percorridas",
+            "sequencia_atual",
+            "desc_operacao_atual",
+            "desc_operador_atual",
+            "data_final_apontamento",
+        ])
+
     df = df.sort_values(
         by=["chave_of", "sequencia_of"],
         ascending=[True, True]
@@ -126,10 +139,12 @@ def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
         for _, row in subdf.iterrows():
             seq = int(row["sequencia_of"]) if pd.notna(row["sequencia_of"]) else 0
             oper = limpar_texto(row["desc_operacao"])
+
             if not oper:
                 continue
 
             chave = (seq, oper)
+
             if chave not in vistos:
                 vistos.add(chave)
                 pares.append(f"{seq} - {oper}")
@@ -138,16 +153,25 @@ def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
 
     df_fluxo = (
         df.groupby("chave_of", as_index=False)
-        .apply(lambda g: pd.Series({
-            "operacoes_percorridas": montar_fluxo_operacoes(g)
-        }))
+        .apply(
+            lambda g: pd.Series({
+                "operacoes_percorridas": montar_fluxo_operacoes(g)
+            })
+        )
         .reset_index(drop=True)
     )
 
     idx_ultimos = df.groupby("chave_of")["sequencia_of"].idxmax()
+
     df_ultimos = df.loc[
         idx_ultimos,
-        ["chave_of", "sequencia_of", "desc_operacao", "desc_operador", "data_final"]
+        [
+            "chave_of",
+            "sequencia_of",
+            "desc_operacao",
+            "desc_operador",
+            "data_final"
+        ]
     ].copy()
 
     df_ultimos = df_ultimos.rename(columns={
@@ -163,14 +187,17 @@ def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
         how="left",
         on="chave_of"
     )
-    if "data_final_apontamento" not in df_final.columns:
-        df_final["data_final_apontamento"] = pd.NaT
 
     df_final["data_final_apontamento"] = pd.to_datetime(
         df_final["data_final_apontamento"],
         errors="coerce"
     )
-    df_final["sequencia_atual"] = pd.to_numeric(df_final["sequencia_atual"], errors="coerce").fillna(0).astype(int)
+
+    df_final["sequencia_atual"] = pd.to_numeric(
+        df_final["sequencia_atual"],
+        errors="coerce"
+    ).fillna(0).astype(int)
+
     df_final["desc_operacao_atual"] = df_final["desc_operacao_atual"].fillna("").astype(str)
     df_final["desc_operador_atual"] = df_final["desc_operador_atual"].fillna("").astype(str)
     df_final["operacoes_percorridas"] = df_final["operacoes_percorridas"].fillna("").astype(str)
@@ -181,11 +208,22 @@ def consolidar_apontamentos(df_apontamento: pd.DataFrame) -> pd.DataFrame:
 def enriquecer_com_apontamentos(df_base: pd.DataFrame) -> pd.DataFrame:
     df = df_base.copy()
 
+    colunas_apontamento = [
+        "sequencia_atual",
+        "desc_operacao_atual",
+        "desc_operador_atual",
+        "operacoes_percorridas",
+        "data_final_apontamento",
+    ]
+
     if "chave_of" not in df.columns:
-        df["sequencia_atual"] = 0
-        df["desc_operacao_atual"] = ""
-        df["desc_operador_atual"] = ""
-        df["operacoes_percorridas"] = ""
+        for col in colunas_apontamento:
+            if col == "sequencia_atual":
+                df[col] = 0
+            elif col == "data_final_apontamento":
+                df[col] = pd.NaT
+            else:
+                df[col] = ""
         return df
 
     df_apontamento = carregar_apontamentos()
@@ -193,20 +231,20 @@ def enriquecer_com_apontamentos(df_base: pd.DataFrame) -> pd.DataFrame:
 
     df = pd.merge(
         df,
-    df_apontamento[
-        [
-            "chave_of",
-            "sequencia_atual",
-            "desc_operacao_atual",
-            "desc_operador_atual",
-            "operacoes_percorridas",
-            "data_final_apontamento",
-        ]
-    ],
+        df_apontamento[
+            [
+                "chave_of",
+                "sequencia_atual",
+                "desc_operacao_atual",
+                "desc_operador_atual",
+                "operacoes_percorridas",
+                "data_final_apontamento",
+            ]
+        ],
         how="left",
         on="chave_of"
     )
-    
+
     if "data_final_apontamento" not in df.columns:
         df["data_final_apontamento"] = pd.NaT
 
@@ -227,9 +265,11 @@ def enriquecer_com_apontamentos(df_base: pd.DataFrame) -> pd.DataFrame:
     if "operacoes_percorridas" not in df.columns:
         df["operacoes_percorridas"] = ""
 
+    df["sequencia_atual"] = pd.to_numeric(
+        df["sequencia_atual"],
+        errors="coerce"
+    ).fillna(0).astype(int)
 
-
-    df["sequencia_atual"] = pd.to_numeric(df["sequencia_atual"], errors="coerce").fillna(0).astype(int)
     df["desc_operacao_atual"] = df["desc_operacao_atual"].fillna("").astype(str)
     df["desc_operador_atual"] = df["desc_operador_atual"].fillna("").astype(str)
     df["operacoes_percorridas"] = df["operacoes_percorridas"].fillna("").astype(str)
