@@ -1,5 +1,5 @@
 import pandas as pd
-from database import get_connection
+from database import conectar_erp
 from services.laboratorio_apontamentos import enriquecer_com_apontamentos
 
 
@@ -84,7 +84,7 @@ def carregar_ofs_laboratorio(status_list=None) -> pd.DataFrame:
 
     status_sql = ", ".join([f"'{s}'" for s in status_list])
 
-    conn = get_connection()
+    conn = conectar_erp()
 
     sql_of = f"""
         SELECT
