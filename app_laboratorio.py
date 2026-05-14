@@ -24,8 +24,8 @@ from st_aggrid import JsCode
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, JsCode
 from services.laboratorio_service import carregar_ofs_laboratorio
+from database import conectar_painel
 
-ARQUIVO_BANCO = "banco_laboratorio.txt"
 ARQUIVO_LOGO_SIDEBAR = "Controller.png"
 ARQUIVO_LOGO_DIREITA = "Logo_ADXW.bmp"
 ARQUIVO_FUNDO = "Auditor.png"
@@ -641,20 +641,43 @@ def atualizar_loading(status_placeholder, progress_bar, mensagem, etapa, total_e
     progress_bar.progress(percentual)
 
 
-def carregar_banco_txt(caminho=ARQUIVO_BANCO):
-    colunas = ["Nro_OF", "Codigo_Produto", "Nw_Data", "Prioridade", "Responsavel", "Alteracao"]
+def carregar_banco_mysql():
+    colunas = [
+        "Nro_OF",
+        "Codigo_Produto",
+        "Nw_Data",
+        "Prioridade",
+        "Responsavel",
+        "Alteracao"
+    ]
 
-    if not os.path.exists(caminho):
-        return pd.DataFrame(columns=colunas)
+    conn = None
 
     try:
-        df_banco = pd.read_csv(caminho, sep=";", dtype=str, encoding="utf-8").fillna("")
+        conn = conectar_painel()
+
+        query = """
+            SELECT
+                Nro_OF,
+                Codigo_Produto,
+                Nw_Data,
+                Prioridade,
+                Responsavel,
+                Alteracao
+            FROM tabsdp
+        """
+
+        df_banco = pd.read_sql(query, conn)
+
+        if df_banco.empty:
+            return pd.DataFrame(columns=colunas)
 
         for col in colunas:
             if col not in df_banco.columns:
                 df_banco[col] = ""
 
         df_banco = df_banco[colunas].copy()
+
         df_banco["Nro_OF"] = df_banco["Nro_OF"].apply(normalizar_texto)
         df_banco["Codigo_Produto"] = df_banco["Codigo_Produto"].apply(normalizar_texto)
         df_banco["Nw_Data"] = df_banco["Nw_Data"].apply(normalizar_texto)
@@ -662,13 +685,20 @@ def carregar_banco_txt(caminho=ARQUIVO_BANCO):
         df_banco["Responsavel"] = df_banco["Responsavel"].apply(normalizar_texto)
         df_banco["Alteracao"] = df_banco["Alteracao"].apply(normalizar_texto)
 
-        df_banco = df_banco.drop_duplicates(subset=["Nro_OF", "Codigo_Produto"], keep="last")
+        df_banco = df_banco.drop_duplicates(
+            subset=["Nro_OF", "Codigo_Produto"],
+            keep="last"
+        )
+
         return df_banco
 
     except Exception as e:
-        st.error(f"Erro ao ler o arquivo {caminho}: {e}")
+        st.error(f"Erro ao ler tabela tabsdp: {e}")
         return pd.DataFrame(columns=colunas)
 
+    finally:
+        if conn:
+            conn.close()
 
 def montar_texto_alteracao(valor_antigo, valor_novo, campo, timestamp):
     antigo = normalizar_texto(valor_antigo)
@@ -702,10 +732,17 @@ def consolidar_alteracoes(texto_existente, novas_linhas):
     return " || ".join(partes)
 
 
-def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
-    colunas_saida = ["Nro_OF", "Codigo_Produto", "Nw_Data", "Prioridade", "Responsavel", "Alteracao"]
+def salvar_tabsdp_mysql(df_tabela):
+    colunas_saida = [
+        "Nro_OF",
+        "Codigo_Produto",
+        "Nw_Data",
+        "Prioridade",
+        "Responsavel",
+        "Alteracao"
+    ]
 
-    df_banco_atual = carregar_banco_txt(caminho).copy()
+    df_banco_atual = carregar_banco_mysql().copy()
 
     for col in colunas_saida:
         if col not in df_banco_atual.columns:
@@ -721,6 +758,7 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
         "Código Produto": "Codigo_Produto",
         "Responsavel": "Responsavel",
     }
+
     df_edit = df_edit.rename(columns=rename_map)
 
     for col in colunas_saida:
@@ -732,13 +770,11 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
 
     df_edit["Remover"] = df_edit["Remover"].fillna(False).astype(bool)
 
-    for col in ["Nro_OF", "Codigo_Produto", "Nw_Data", "Prioridade", "Responsavel", "Alteracao"]:
+    for col in colunas_saida:
         df_edit[col] = df_edit[col].apply(normalizar_texto)
 
     df_edit["Prioridade"] = df_edit["Prioridade"].str.upper()
-    
 
-    # mantém linhas válidas OU marcadas para remoção
     df_edit = df_edit[
         (
             (df_edit["Nro_OF"].astype(str).str.strip() != "")
@@ -747,14 +783,22 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
         | (df_edit["Remover"] == True)
     ].copy()
 
-    df_edit = df_edit.drop_duplicates(subset=["Nro_OF", "Codigo_Produto"], keep="last")
+    df_edit = df_edit.drop_duplicates(
+        subset=["Nro_OF", "Codigo_Produto"],
+        keep="last"
+    )
 
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
     mapa_banco = {}
+
     if not df_banco_atual.empty:
         for _, row in df_banco_atual.iterrows():
-            chave = (row["Nro_OF"], row["Codigo_Produto"])
+            chave = (
+                normalizar_texto(row.get("Nro_OF", "")),
+                normalizar_texto(row.get("Codigo_Produto", ""))
+            )
+
             mapa_banco[chave] = {
                 "Nw_Data": normalizar_texto(row.get("Nw_Data", "")),
                 "Prioridade": normalizar_texto(row.get("Prioridade", "")),
@@ -763,24 +807,52 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
             }
 
     alteracoes_finais = []
+
     for _, row in df_edit.iterrows():
-        chave = (row["Nro_OF"], row["Codigo_Produto"])
-        base_antiga = mapa_banco.get(
-            chave,
-            {"Nw_Data": "", "Prioridade": "", "Responsavel": "", "Alteracao": ""}
+        chave = (
+            normalizar_texto(row["Nro_OF"]),
+            normalizar_texto(row["Codigo_Produto"])
         )
 
-        # 🚀 PROTEÇÃO: não sobrescrever com vazio
+        base_antiga = mapa_banco.get(
+            chave,
+            {
+                "Nw_Data": "",
+                "Prioridade": "",
+                "Responsavel": "",
+                "Alteracao": ""
+            }
+        )
+
         if row["Responsavel"] == "":
             row["Responsavel"] = base_antiga.get("Responsavel", "")
 
         novas_linhas = [
-            montar_texto_alteracao(base_antiga.get("Prioridade", ""), row["Prioridade"], "Prioridade", timestamp),
-            montar_texto_alteracao(base_antiga.get("Nw_Data", ""), row["Nw_Data"], "Nw_Data", timestamp),
-            montar_texto_alteracao(base_antiga.get("Responsavel", ""), row["Responsavel"], "Responsavel", timestamp),
+            montar_texto_alteracao(
+                base_antiga.get("Prioridade", ""),
+                row["Prioridade"],
+                "Prioridade",
+                timestamp
+            ),
+            montar_texto_alteracao(
+                base_antiga.get("Nw_Data", ""),
+                row["Nw_Data"],
+                "Nw_Data",
+                timestamp
+            ),
+            montar_texto_alteracao(
+                base_antiga.get("Responsavel", ""),
+                row["Responsavel"],
+                "Responsavel",
+                timestamp
+            ),
         ]
 
-        texto_alteracao = consolidar_alteracoes(base_antiga.get("Alteracao", ""), novas_linhas)
+        texto_alteracao = consolidar_alteracoes(
+            base_antiga.get("Alteracao", ""),
+            novas_linhas
+        )
+
         alteracoes_finais.append(texto_alteracao)
 
     df_edit["Alteracao"] = alteracoes_finais
@@ -792,12 +864,20 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
         )
     )
 
-    chaves_editadas = set(zip(df_edit["Nro_OF"], df_edit["Codigo_Produto"]))
+    chaves_editadas = set(
+        zip(
+            df_edit["Nro_OF"],
+            df_edit["Codigo_Produto"]
+        )
+    )
 
     if not df_banco_atual.empty:
         df_banco_atual = df_banco_atual[
             ~df_banco_atual.apply(
-                lambda row: (row["Nro_OF"], row["Codigo_Produto"]) in chaves_editadas,
+                lambda row: (
+                    row["Nro_OF"],
+                    row["Codigo_Produto"]
+                ) in chaves_editadas,
                 axis=1,
             )
         ].copy()
@@ -805,7 +885,13 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
     df_edit_manter = df_edit[~df_edit["Remover"]].copy()
     df_edit_manter = df_edit_manter[colunas_saida].copy()
 
-    df_final = pd.concat([df_banco_atual[colunas_saida], df_edit_manter], ignore_index=True)
+    df_final = pd.concat(
+        [
+            df_banco_atual[colunas_saida],
+            df_edit_manter
+        ],
+        ignore_index=True
+    )
 
     df_final = df_final[
         (df_final["Prioridade"].astype(str).str.strip() != "")
@@ -817,12 +903,18 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
     if chaves_remover:
         df_final = df_final[
             ~df_final.apply(
-                lambda row: (row["Nro_OF"], row["Codigo_Produto"]) in chaves_remover,
+                lambda row: (
+                    row["Nro_OF"],
+                    row["Codigo_Produto"]
+                ) in chaves_remover,
                 axis=1,
             )
         ].copy()
 
-    df_final = df_final.drop_duplicates(subset=["Nro_OF", "Codigo_Produto"], keep="last")
+    df_final = df_final.drop_duplicates(
+        subset=["Nro_OF", "Codigo_Produto"],
+        keep="last"
+    )
 
     df_final["_ord_prioridade"] = df_final["Prioridade"].apply(prioridade_para_ordem)
     df_final["_ord_data"] = df_final["Nw_Data"].apply(converter_data_br_para_ordenacao)
@@ -833,10 +925,60 @@ def salvar_banco_txt(df_tabela, caminho=ARQUIVO_BANCO):
         na_position="last",
     ).drop(columns=["_ord_prioridade", "_ord_data"])
 
-    df_final.to_csv(caminho, sep=";", index=False, encoding="utf-8")
+    sql_upsert = """
+        INSERT INTO tabsdp (
+            Nro_OF,
+            Codigo_Produto,
+            Nw_Data,
+            Prioridade,
+            Responsavel,
+            Alteracao
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            Nw_Data = VALUES(Nw_Data),
+            Prioridade = VALUES(Prioridade),
+            Responsavel = VALUES(Responsavel),
+            Alteracao = VALUES(Alteracao)
+    """
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = conectar_painel()
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM tabsdp")
+
+        for _, row in df_final.iterrows():
+            cursor.execute(
+                sql_upsert,
+                (
+                    normalizar_texto(row["Nro_OF"]),
+                    normalizar_texto(row["Codigo_Produto"]),
+                    normalizar_texto(row["Nw_Data"]),
+                    normalizar_texto(row["Prioridade"]).upper(),
+                    normalizar_texto(row["Responsavel"]),
+                    normalizar_texto(row["Alteracao"]),
+                )
+            )
+
+        conn.commit()
+
+    except Exception:
+        if conn:
+            conn.rollback()
+        raise
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
-def aplicar_banco_txt(df_principal, df_banco):
+def aplicar_tabsdp_mysql(df_principal, df_banco):
     df = df_principal.copy()
     df["nro_of"] = df["nro_of"].apply(normalizar_texto)
     df["codigo_produto"] = df["codigo_produto"].apply(normalizar_texto)
@@ -907,14 +1049,14 @@ def carregar_base_principal_com_controle():
     df_origem = carregar_base_do_banco(tuple(status_list))
 
     if st.session_state["mostrar_loading"]:
-        atualizar_loading(status_placeholder, progress_bar, "Lendo banco_laboratorio.txt...", 2, total_etapas, start_time)
+        atualizar_loading(status_placeholder, progress_bar, "Lendo tabela tabsdp...", 2, total_etapas, start_time)
 
-    df_banco = carregar_banco_txt()
+    df_banco = carregar_banco_mysql()
 
     if st.session_state["mostrar_loading"]:
         atualizar_loading(status_placeholder, progress_bar, "Aplicando colunas locais...", 3, total_etapas, start_time)
 
-    df_base = aplicar_banco_txt(df_origem, df_banco)
+    df_base = aplicar_tabsdp_mysql(df_origem, df_banco)
     df_base = garantir_colunas_novas(df_base)
     df_base = ordenar_dataframe(df_base)
 
@@ -934,7 +1076,7 @@ def reaplicar_banco_sem_reconsultar_base():
     if st.session_state["df_base"] is None:
         return
 
-    df_banco = carregar_banco_txt()
+    df_banco = carregar_banco_mysql()
     df_base_atual = st.session_state["df_base"].copy()
 
     colunas_remover = ["Nw_Data", "Prioridade", "Responsavel", "Alteracao", "Remover"]
@@ -942,7 +1084,7 @@ def reaplicar_banco_sem_reconsultar_base():
         if col in df_base_atual.columns:
             df_base_atual = df_base_atual.drop(columns=[col])
 
-    df_base_novo = aplicar_banco_txt(df_base_atual, df_banco)
+    df_base_novo = aplicar_tabsdp_mysql(df_base_atual, df_banco)
     df_base_novo = garantir_colunas_novas(df_base_novo)
     df_base_novo = ordenar_dataframe(df_base_novo)
 
@@ -1779,7 +1921,7 @@ def main():
         c1, c2 = st.columns([1.2, 5])
 
         with c1:
-            if st.button("💾 Salvar banco_laboratorio.txt", use_container_width=True):
+            if st.button("💾 Salvar tabsdp", use_container_width=True):
                 df_para_salvar = df_grid_editado.copy()
 
                 if "Prioridade" in df_para_salvar.columns:
@@ -1797,7 +1939,7 @@ def main():
                     )
                 if "Alteração" in df_para_salvar.columns and "Alteracao" not in df_para_salvar.columns:
                     df_para_salvar = df_para_salvar.rename(columns={"Alteração": "Alteracao"})
-### alterado aqui
+
                 if "Remover" in df_para_salvar.columns:
                     df_para_salvar["Remover"] = df_para_salvar["Remover"].fillna(False).astype(bool)
 
@@ -1809,14 +1951,14 @@ def main():
                         st.write(f"- {erro}")
                 else:
                     try:
-                        salvar_banco_txt(df_para_salvar, ARQUIVO_BANCO)
+                        salvar_tabsdp_mysql(df_para_salvar)
                         reaplicar_banco_sem_reconsultar_base()
                         st.session_state["mensagem_salvo"] = (
-                            f"Dados gravados com sucesso em {ARQUIVO_BANCO}."
+                            f"Dados gravados com sucesso na tabela tabsdp."
                         )
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Erro ao salvar o arquivo {ARQUIVO_BANCO}: {e}")
+                        st.error(f"Erro ao salvar na tabela tabsdp: {e}")
 
         with c2:
             st.write("")
@@ -1824,10 +1966,10 @@ def main():
         if st.session_state["mensagem_salvo"]:
             st.info(st.session_state["mensagem_salvo"])
 
-        with st.expander("Visualizar conteúdo atual do banco_laboratorio.txt"):
-            df_banco_atual = carregar_banco_txt()
+        with st.expander("Visualizar conteúdo atual da tabela tabsdp"):
+            df_banco_atual = carregar_banco_mysql()
             if df_banco_atual.empty:
-                st.write("O arquivo banco_laboratorio.txt ainda não possui registros.")
+                st.write("A tabela tabsdp ainda não possui registros.")
             else:
                 df_banco_atual = df_banco_atual.copy()
                 df_banco_atual["_ord_prioridade"] = df_banco_atual["Prioridade"].apply(prioridade_para_ordem)
